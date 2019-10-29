@@ -4,6 +4,8 @@
 //#include <string>
 //#include <chrono>
 //#include <map>
+//#include <stack>
+//#include <bitset>
 //#include <vector>
 //using namespace std;
 //
@@ -21,7 +23,7 @@
 //multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>&);
 //void buildTable(multimap<int, unsigned char>&, huffNode *&);
 //void writeTable(ofstream&, huffNode*&, const int&);
-//void createTree(huffNode*&);
+//void createBitset(ofstream&, huffNode*&);
 //
 //void main() {
 //	auto start = chrono::high_resolution_clock::now();
@@ -45,7 +47,7 @@
 //		huffTable = new huffNode[tableSize];
 //		buildTable(sortedTable, huffTable);
 //		writeTable(fileOut, huffTable, tableSize);
-//		createTree(huffTable);
+//		createBitset(fileOut, huffTable);
 //		//writeMessage(fileOut, );
 //	}
 //
@@ -54,10 +56,26 @@
 //	auto stop = chrono::high_resolution_clock::now();
 //	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 //	cout << duration.count() << endl;
-//
+//	system("PAUSE");
 //}
 //
-//void createTree(huffNode*& huffTable) {
+//void createBitset(ofstream& fileOut, huffNode*& huffTable) {
+//	stack<huffNode> S;
+//	huffNode root = huffTable[0];
+//
+//	unsigned short left = 0;
+//	unsigned short right = 0;
+//	unsigned int bits = 0;
+//
+//	while (root.left >= 0) {
+//		S.push(root);
+//		root = huffTable[root.left];
+//	}
+//
+//	while (!S.empty()) {
+//
+//	}
+//
 //
 //}
 //
@@ -100,7 +118,7 @@
 //		}
 //
 //
-//		for (int i = 1; i < h-1; i++) {
+//		for (int i = 1; i < h - 1; i++) {
 //			if (huffTable[i].frequency > huffTable[i + 1].frequency) {
 //				tempNode = huffTable[i];
 //				huffTable[i] = huffTable[i + 1];
@@ -151,7 +169,7 @@
 //
 //multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>& glyphTable) {
 //	auto start = chrono::high_resolution_clock::now();
-//	
+//
 //	for (int i = 0; i < 256; i++) {
 //		if (glyphTable[i] == 0) {
 //			glyphTable.erase(i);
