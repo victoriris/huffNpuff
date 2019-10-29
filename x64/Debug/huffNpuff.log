@@ -1,0 +1,5 @@
+﻿  Puff.cpp
+Y:\GDrive\Education\Harding\2019 Fall\file structures\huffNpuff\Puff.cpp(128,18): warning C4244:  'initializing': conversion from 'std::streamoff' to 'int', possible loss of data
+Y:\GDrive\Education\Harding\2019 Fall\file structures\huffNpuff\Puff.cpp(132,18): warning C4244:  'initializing': conversion from 'std::streamoff' to 'int', possible loss of data
+Y:\GDrive\Education\Harding\2019 Fall\file structures\huffNpuff\Puff.cpp(163,27): warning C4267:  '=': conversion from 'size_t' to 'int', possible loss of data
+  huffNpuff.vcxproj -> Y:\GDrive\Education\Harding\2019 Fall\file structures\huffNpuff\x64\Debug\huffNpuff.exe
