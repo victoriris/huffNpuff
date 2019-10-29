@@ -125,11 +125,11 @@ string getContent(HuffFile &huffFile) {
 	string fileContent = "";
 
     // Current position in the file
-    int position = huffFile.compressedFile.tellg();
+    auto position = huffFile.compressedFile.tellg();
 
 	// Get file size
     huffFile.compressedFile.seekg(0, huffFile.compressedFile.end);
-    int fileSize = huffFile.compressedFile.tellg();
+    auto fileSize = huffFile.compressedFile.tellg();
     huffFile.compressedFile.seekg(position);
     
 	// For every byte 
@@ -178,7 +178,7 @@ int main() {
 	
 	// Input of file
     string inFileName;
-    cout << "HUF Filename: ";
+    cout << "Compressed Filename: ";
     cin >> inFileName;
 
 	// Start timer
@@ -204,7 +204,8 @@ int main() {
 	// Stop and print timer
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-	cout << "Duration: " << duration.count() << endl;
+	cout << "Duration: " << duration.count();
+	cout << " microseconds" << endl;
 	
 	decodedFile.close();
 	return 0;
