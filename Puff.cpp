@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cmath>
-#include <ctime>
+#include <chrono>
 #include <map>
 #include <vector>
 #include <string>
@@ -182,8 +182,7 @@ int main() {
     cin >> inFileName;
 
 	// Start timer
-	clock_t start, end;
-	start = clock();
+	auto start = chrono::high_resolution_clock::now();
 
 	// Initialize huff file and load its content
 	HuffFile huffFile;
@@ -202,11 +201,10 @@ int main() {
 	decodedFile.close();
 
 
-	// Stop timer
-	end = clock();
-	cout << std::setprecision(1) << std::fixed;
-	cout << "Time: " << (double(end - start) / CLOCKS_PER_SEC);
-	cout << " seconds." << endl;
+	// Stop and print timer
+	auto stop = chrono::high_resolution_clock::now();
+	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+	cout << "Duration: " << duration.count() << endl;
 	
 	decodedFile.close();
 	return 0;
