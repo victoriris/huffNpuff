@@ -102,7 +102,8 @@ void createBitset(ofstream& fileOut, huffNode*& huffTable, map<char, hbitset> &b
 			S.push(root);
 			//move left
 			root = huffTable[blocker];
-			bitString += "0";
+			bitArray.bits << 1;
+			bitArray.bits.set(0);
 			depth++;
 		}
 		else if (root.left < 0 && root.right > 0) 
@@ -111,14 +112,14 @@ void createBitset(ofstream& fileOut, huffNode*& huffTable, map<char, hbitset> &b
 			root.right = -1;
 			S.push(root);
 			root = huffTable[blocker];
-			bitString += "1";
+			bitArray.bits << 1;
+			bitArray.bits.set(1);
 			depth++;
 		}
 		else if (!S.empty()){
 			bitArray.it = depth;
-			bit_stream.str(bitString);
-			bit_stream >> bitArray.bits;
 			bitSets[root.glyph] = bitArray;
+			bitArray.bits >>= 1;
 			depth--;
 			root = S.top();
 			S.pop();
