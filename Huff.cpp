@@ -11,6 +11,7 @@
 using namespace std;
 const int BITNUM = 20;
 const int CHARNUM = 256;
+//makes a node to hold frequency, glyph, and l/r pointers for the huffman table or tree
 struct huffNode {
 	int frequency;
 	unsigned char glyph;
@@ -18,6 +19,7 @@ struct huffNode {
 	int right;
 };
 
+//creates a bitset with the number of spaces used
 struct hbitset {
 	bitset<20> bits;
 	int it;
@@ -68,6 +70,7 @@ void main() {
 	system("PAUSE");
 }
 
+//tries to write out the bitsets to the file
 void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, hbitset>& bitSets, const string &fileName) {
 	auto start = chrono::high_resolution_clock::now();
 	unsigned char c = ' ';
@@ -95,7 +98,7 @@ void createBitset(ofstream& fileOut, huffNode*& huffTable, map<char, hbitset> &b
 	
 	do {
 		if (root.left > 0) {
-			//block for stack
+			//block for stack so that it doesn't traverse the same way
 			blocker = root.left;
 			root.left = -1;
 			//add to stack
@@ -111,11 +114,13 @@ void createBitset(ofstream& fileOut, huffNode*& huffTable, map<char, hbitset> &b
 			blocker = root.right;
 			root.right = -1;
 			S.push(root);
+			//move right
 			root = huffTable[blocker];
 			bitArray.bits << 1;
 			bitArray.bits.set(1);
 			depth++;
 		}
+		//if left and right are both -1, you've found a glyph. add the bitArray to the bitSet map.
 		else if (!S.empty()){
 			bitArray.it = depth;
 			bitSets[root.glyph] = bitArray;
@@ -138,7 +143,7 @@ void createBitset(ofstream& fileOut, huffNode*& huffTable, map<char, hbitset> &b
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 	cout << duration.count() << endl;
 }
-
+//writes the huffman table to the file
 void writeTable(ofstream& fileOut, huffNode*& huffTable, const int& tableSize) {
 	auto start = chrono::high_resolution_clock::now();
 	for (int i = 0; i < tableSize; i++) {
@@ -150,7 +155,7 @@ void writeTable(ofstream& fileOut, huffNode*& huffTable, const int& tableSize) {
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 	cout << duration.count() << endl;
 }
-
+//builds the huffman table with the huffman algorithm (but also doesn't work I think)
 void buildTable(multimap<int, unsigned char> &glyphTable, huffNode* &huffTable) {
 	auto start = chrono::high_resolution_clock::now();
 	huffNode tempNode;
@@ -210,7 +215,7 @@ void buildTable(multimap<int, unsigned char> &glyphTable, huffNode* &huffTable) 
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 	cout << duration.count() << endl;
 }
-
+//writes header to the file
 void writeHeader(ofstream& fileOut, string& fileName, const multimap<int, unsigned char>& glyphTable) {
 	auto start = chrono::high_resolution_clock::now();
 	int fileNameSize = fileName.length();
@@ -226,7 +231,7 @@ void writeHeader(ofstream& fileOut, string& fileName, const multimap<int, unsign
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 	cout << duration.count() << endl;
 }
-
+//deletes empty glyphs from the map, leaving only glyphs with positive frequency
 multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>& glyphTable) {
 	auto start = chrono::high_resolution_clock::now();
 
@@ -248,7 +253,7 @@ multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>& glyphTab
 
 	return result;
 }
-
+//populates map with glyphs and frequencies
 void fillGlyphTable(map<unsigned char, int>& glyphTable, ifstream &fileIn) {
 	auto start = chrono::high_resolution_clock::now();
 	unsigned char glyph = ' ';
@@ -261,7 +266,7 @@ void fillGlyphTable(map<unsigned char, int>& glyphTable, ifstream &fileIn) {
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 	cout << duration.count() << endl;
 }
-
+//creates empty glyph map with all available glyphs
 void initGlyphTable(map<unsigned char, int> &glyphTable) {
 	auto start = chrono::high_resolution_clock::now();
 	for (int i = 0; i < CHARNUM; i++) {
@@ -271,7 +276,7 @@ void initGlyphTable(map<unsigned char, int> &glyphTable) {
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 	cout << duration.count() << endl;
 }
-
+//opens files, stupid
 void openFiles(ifstream &fileIn, ofstream &fileOut, const string &fileName, int &fs) {
 	auto start = chrono::high_resolution_clock::now();
 	fileIn.open(fileName, ios::in | ios::binary);
