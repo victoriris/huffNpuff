@@ -36,7 +36,6 @@ void createBitset(ofstream&, huffNode*&, map<char, hbitset>&);
 void writeMessage(ifstream&, ofstream&, map<char, hbitset>&, const string&);
 
 void main() {
-	auto start = chrono::high_resolution_clock::now();
 	ifstream fileIn;
 	ofstream fileOut;
 	string fileName;
@@ -46,6 +45,7 @@ void main() {
 
 	cout << "Please enter a file name.\n";
 	cin >> fileName;
+	auto start = chrono::high_resolution_clock::now();
 
 	openFiles(fileIn, fileOut, fileName, fs);
 	if (fs) {
@@ -74,11 +74,13 @@ void main() {
 void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, hbitset>& bitSets, const string &fileName) {
 	auto start = chrono::high_resolution_clock::now();
 	unsigned char c = ' ';
+	string bs;
 	fileIn.close();
 	fileIn.open(fileName, ios::in);
 	while (!fileIn.eof()) {
 		fileIn.read((char*)&c, sizeof c);
-		fileOut.write((char*)&bitSets[c].bits, sizeof bitSets[c].bits);
+		bs = bitSets[c].bits.to_string().substr((20 - bitSets[c].it), bitSets[c].it);
+		fileOut.write((char*)&bs.front(), bs.length());
 	}
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
@@ -95,7 +97,7 @@ void createBitset(ofstream& fileOut, huffNode*& huffTable, map<char, hbitset> &b
 	huffNode root = huffTable[0];
 	int blocker;
 	string bitString = "";
-	
+
 	do {
 		if (root.left > 0) {
 			//block for stack so that it doesn't traverse the same way
@@ -109,7 +111,7 @@ void createBitset(ofstream& fileOut, huffNode*& huffTable, map<char, hbitset> &b
 			bitArray.bits.set(0);
 			depth++;
 		}
-		else if (root.left < 0 && root.right > 0) 
+		else if (root.left < 0 && root.right > 0)
 		{
 			blocker = root.right;
 			root.right = -1;
@@ -121,7 +123,7 @@ void createBitset(ofstream& fileOut, huffNode*& huffTable, map<char, hbitset> &b
 			depth++;
 		}
 		//if left and right are both -1, you've found a glyph. add the bitArray to the bitSet map.
-		else if (!S.empty()){
+		else if (!S.empty()) {
 			bitArray.it = depth;
 			bitSets[root.glyph] = bitArray;
 			bitArray.bits >>= 1;
@@ -133,10 +135,10 @@ void createBitset(ofstream& fileOut, huffNode*& huffTable, map<char, hbitset> &b
 
 	for (auto i : bitSets) {
 		cout << i.first << " : ";
-			cout << i.second.bits;
+		cout << i.second.bits.to_string().substr((20 - i.second.it), i.second.it);
 		cout << endl;
 	}
-	
+
 
 
 	auto stop = chrono::high_resolution_clock::now();
