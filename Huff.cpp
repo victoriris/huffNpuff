@@ -74,14 +74,15 @@ void main() {
 void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, hbitset>& bitSets, const string &fileName) {
 	auto start = chrono::high_resolution_clock::now();
 	unsigned char c = ' ';
-	string bs;
+	string bs = "";
 	fileIn.close();
 	fileIn.open(fileName, ios::in);
 	while (!fileIn.eof()) {
 		fileIn.read((char*)&c, sizeof c);
-		bs = bitSets[c].bits.to_string().substr((20 - bitSets[c].it), bitSets[c].it);
-		fileOut.write((char*)&bs.front(), bs.length());
+		bs += bitSets[c].bits.to_string().substr((20 - bitSets[c].it), bitSets[c].it);
+
 	}
+	fileOut.write((char*)&bs.front(), bs.length());
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 	cout << duration.count() << endl;
