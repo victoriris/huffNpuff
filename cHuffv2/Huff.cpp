@@ -75,7 +75,7 @@ void createTable(multimap<int, unsigned char> &glyphTable, huffNode* huffTable) 
 	}
 	//for every glyph in the table:
 	for (int i = 0; i < (glyphTable.size() - 1); i++) {
-		//mark(m) lower of relative slots 2 and 3 ([1] and [2])
+		//mark(m) lower of relative slots 2 and 3 ([1] and [2]) while not the last one
 		if (h > 1) {
 			m = testTable[1].frequency <= testTable[2].frequency ? 1 : 2;
 		}
@@ -184,6 +184,7 @@ void initFrequencyTable(map<unsigned char, int> &frequencyTable) {
 	for (int i = 0; i < CHARNUM; i++) {
 		frequencyTable[i] = 0;
 	}
+	frequencyTable[256] = 1;
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 	cout << duration.count() << endl;
