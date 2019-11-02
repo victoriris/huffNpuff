@@ -19,29 +19,39 @@ struct huffNode {
 };
 
 
-void openFiles(ofstream&, const string&, int&);
+void openFiles(ifstream&, ofstream&, const string&, const int&);
 void initFrequencyTable(map<unsigned char, int>&);
 void fillFrequencyTable(map<unsigned char, int>&, ifstream&);
 multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>&);
 void createTable(multimap<int, unsigned char>&, huffNode*);
+void createBitset(ofstream&, huffNode[], map<char, string>&);
+void writeMessage(ifstream&, ofstream&, map<char, string>&, const string&);
+void writeHeader(ofstream&, string&, const multimap<int, unsigned char>&);
+void writeTable(ofstream&, huffNode[], const int&);
 
 void main() {
-
 	ofstream fileOut;
+	ifstream fileIn;
 	string fileName;
 	map<unsigned char, int> frequencyTable;
 	huffNode huffTable[MAX_ENTRIES];
 	multimap<int, unsigned char> sortedTable;
+	map<char, string> bitSets;
 	cout << "Please enter a file name.\n";
 	cin >> fileName;
-	ifstream fileIn(fileName, ios::in | ios::binary);
+	int fs;
+	openFiles(fileIn, fileOut, fileName, fs);
 	auto start = chrono::high_resolution_clock::now();
+
 	initFrequencyTable(frequencyTable);
 	fillFrequencyTable(frequencyTable, fileIn);
 	sortedTable = deleteEmptyGlyphs(frequencyTable);
 	createTable(sortedTable, huffTable);
-
-	
+	createBitset(fileOut, huffTable, bitSets);
+	writeHeader(fileOut, fileName, sortedTable);
+	int tableSize = (sortedTable.size() * 2) + 1;
+	writeTable(fileOut, huffTable, tableSize);
+	writeMessage(fileIn, fileOut, bitSets, fileName);
 
 	fileIn.close();
 	fileOut.close();
@@ -61,7 +71,6 @@ glyphTable format: glyphTable[frequency] = glyph
 void createTable(multimap<int, unsigned char> &glyphTable, huffNode* huffTable) {
 	int m, h, f, n;
 	huffNode temp;
-	huffNode testTable[MAX_ENTRIES];
 	int replacement;
 	f = glyphTable.size();
 	h = glyphTable.size() - 1;
@@ -69,49 +78,49 @@ void createTable(multimap<int, unsigned char> &glyphTable, huffNode* huffTable) 
 	//Set the initial values for the huffman table (the glyphs from the frequency table)
 	int j = 0;
 	for (auto i : glyphTable) {
-		testTable[j].frequency = i.first;
-		testTable[j].glyph = i.second;
+		huffTable[j].frequency = i.first;
+		huffTable[j].glyph = i.second;
 		j++;
 	}
 	//for every glyph in the table:
 	for (int i = 0; i < (glyphTable.size() - 1); i++) {
 		//mark(m) lower of relative slots 2 and 3 ([1] and [2]) while not the last one
 		if (h > 1) {
-			m = testTable[1].frequency <= testTable[2].frequency ? 1 : 2;
+			m = huffTable[1].frequency <= huffTable[2].frequency ? 1 : 2;
 		}
 		else { m = 1; }
 		//move (m) to the next free slot
-		testTable[f] = testTable[m];
+		huffTable[f] = huffTable[m];
 
 		//move h to m
-		testTable[m] = testTable[h];
+		huffTable[m] = huffTable[h];
 
 		//check for reheap of m slot
 		replacement = m;
 		//if left is valid
 		if ((m * 2) + 1 < h) {
 			//if left < m slot, set left to replacement
-			if (testTable[m].frequency > testTable[(m * 2) + 1].frequency) {
+			if (huffTable[m].frequency > huffTable[(m * 2) + 1].frequency) {
 				replacement = (m * 2) + 1;
 
 			}
 			//if right is valid and less than replacement, set right to replacement
-			if ((m * 2) + 2 < h &&  testTable[(m * 2) + 2].frequency < testTable[replacement].frequency) {
+			if ((m * 2) + 2 < h &&  huffTable[(m * 2) + 2].frequency < huffTable[replacement].frequency) {
 				replacement = (m * 2) + 2;
 			}
 		}
 		//replace the m slot with replacement (if no replacement, m stays the same)
-		temp = testTable[m];
-		testTable[m] = testTable[replacement];
-		testTable[replacement] = temp;
+		temp = huffTable[m];
+		huffTable[m] = huffTable[replacement];
+		huffTable[replacement] = temp;
 		//move slot 0 to (h)
-		testTable[h] = testTable[0];
+		huffTable[h] = huffTable[0];
 
 		//create freq node at 0
-		testTable[0].frequency = testTable[h].frequency + testTable[f].frequency;
-		testTable[0].glyph = -1;
-		testTable[0].left = h;
-		testTable[0].right = f;
+		huffTable[0].frequency = huffTable[h].frequency + huffTable[f].frequency;
+		huffTable[0].glyph = -1;
+		huffTable[0].left = h;
+		huffTable[0].right = f;
 
 		//check for reheap of all slots
 		for (n = 0; n < h; n++) {
@@ -120,19 +129,19 @@ void createTable(multimap<int, unsigned char> &glyphTable, huffNode* huffTable) 
 			//if left is valid
 			if ((n * 2) + 1 < h) {
 				//if left < n slot, set left to replacement
-				if (testTable[n].frequency > testTable[(n * 2) + 1].frequency) {
+				if (huffTable[n].frequency > huffTable[(n * 2) + 1].frequency) {
 					replacement = (n * 2) + 1;
 
 				}
 				//if right is valid and less than replacement, set right to replacement
-				if ((n * 2) + 2 < h &&  testTable[(n * 2) + 2].frequency < testTable[replacement].frequency) {
+				if ((n * 2) + 2 < h &&  huffTable[(n * 2) + 2].frequency < huffTable[replacement].frequency) {
 					replacement = (n * 2) + 2;
 				}
 			}
 			//replace the n slot with replacement (if no replacement, n stays the same)
-			temp = testTable[n];
-			testTable[n] = testTable[replacement];
-			testTable[replacement] = temp;
+			temp = huffTable[n];
+			huffTable[n] = huffTable[replacement];
+			huffTable[replacement] = temp;
 		}
 
 		h--;
@@ -140,59 +149,39 @@ void createTable(multimap<int, unsigned char> &glyphTable, huffNode* huffTable) 
 
 	}
 	for (int i = 0; i < (glyphTable.size() * 2) - 1; i++) {
-		cout << i << ") " << testTable[i].glyph << " : " << testTable[i].frequency;
-		cout << ", " << testTable[i].left << " < --- > " << testTable[i].right << endl;
+		cout << i << ") " << huffTable[i].glyph << " : " << huffTable[i].frequency;
+		cout << ", " << huffTable[i].left << " < --- > " << huffTable[i].right << endl;
 	}
 }
 
-//opens files, stupid
-void openFiles(ofstream &fileOut, const string &fileName, int &fs) {
-	auto start = chrono::high_resolution_clock::now();
-
-
-
-
-	string outFileName = fileName.substr(0, fileName.length() - 4);
-	outFileName = outFileName + ".huf";
-	fileOut.open(outFileName, ios::out | ios::binary);
-	if (!fileOut.is_open()) {
-		cout << "fileOut failed to open.\n";
-		fileOut.close();
-		fs = 0;
-	}
-
-	auto stop = chrono::high_resolution_clock::now();
-	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-	cout << duration.count() << endl;
-}
 
 //populates map with glyphs and frequencies
-void fillFrequencyTable(map<unsigned char, int>& frequencyTable, ifstream &fileIn) {
-	auto start = chrono::high_resolution_clock::now();
+void fillFrequencyTable(map<unsigned char, int>& frequencyTable, ifstream &fileIn) {/*
+	auto start = chrono::high_resolution_clock::now();*/
 	unsigned char glyph;
 
 	while (fileIn.read((char*)&glyph, 1)) {
 		frequencyTable[glyph]++;
-	}
+	}/*
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-	cout << duration.count() << endl;
+	cout << duration.count() << endl;*/
 }
 //creates empty glyph map with all available glyphs
-void initFrequencyTable(map<unsigned char, int> &frequencyTable) {
-	auto start = chrono::high_resolution_clock::now();
+void initFrequencyTable(map<unsigned char, int> &frequencyTable) {/*
+	auto start = chrono::high_resolution_clock::now();*/
 	for (int i = 0; i < CHARNUM; i++) {
 		frequencyTable[i] = 0;
 	}
-	frequencyTable[256] = 1;
+	frequencyTable[256] = 1;/*
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-	cout << duration.count() << endl;
+	cout << duration.count() << endl;*/
 }
 
 //deletes empty glyphs from the map, leaving only glyphs with positive frequency
-multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>& glyphTable) {
-	auto start = chrono::high_resolution_clock::now();
+multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>& glyphTable) {/*
+	auto start = chrono::high_resolution_clock::now();*/
 
 	for (int i = 0; i < CHARNUM; i++) {
 		if (glyphTable[i] == 0) {
@@ -204,11 +193,135 @@ multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>& glyphTab
 
 	for (auto i : glyphTable) {
 		result.insert({ i.second, i.first });
-	}
+	}/*
 
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-	cout << duration.count() << endl;
+	cout << duration.count() << endl;*/
 
 	return result;
+}
+
+//create a bitset for each char, in a map
+void createBitset(ofstream& fileOut, huffNode huffTable[], map<char, string> &bitSets) {
+	//auto start = chrono::high_resolution_clock::now();
+	stack<huffNode> S;
+	int depth = 0;
+	istringstream bit_stream;
+	huffNode root;
+	int blocker;
+	string bitString = "";
+	root.left = root.right = -2;
+	root.frequency = 0;
+	root.glyph = -1;
+	S.push(root);
+	root = huffTable[0];
+	while (!S.empty()) {
+		if (root.left > 0) {
+			//block for stack so that it doesn't traverse the same way
+			blocker = root.left;
+			root.left = -2;
+			//add to stack
+			S.push(root);
+			//move left
+			root = huffTable[blocker];
+			bitString += "0";
+			depth++;
+		}
+		else if (root.left < 0 && root.right > 0)
+		{
+			blocker = root.right;
+			root.right = -2;
+			S.push(root);
+			//move right
+			root = huffTable[blocker];
+			bitString += "1";
+			depth++;
+		}
+		//if left and right are both -1, you've found a glyph. add the bitArray to the bitSet map.
+		else if (!S.empty()) {
+			if (root.glyph != 255) {
+				bitSets[root.glyph] = bitString;
+			}
+			bitString = bitString.substr(0, bitString.length() - 1);
+			depth--;
+			root = S.top();
+			S.pop();
+		}
+	} 
+
+	//for (auto i : bitSets) {
+	//	cout << i.first << " : ";
+	//	cout << i.second;
+	//	cout << endl;
+	//}
+
+/*
+
+	auto stop = chrono::high_resolution_clock::now();
+	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+	cout << duration.count() << endl;*/
+}
+
+
+//writes header to the file
+void writeHeader(ofstream& fileOut, string& fileName, const multimap<int, unsigned char>& glyphTable) {
+	auto start = chrono::high_resolution_clock::now();
+	int fileNameSize = fileName.length();
+
+	int tableSize = glyphTable.size();
+	fileOut.write((char*)&fileNameSize, 4);
+	cout << fileNameSize;
+	fileOut.write((char*)&fileName.front(), fileName.length());
+	cout << fileName;
+	fileOut.write((char*)&tableSize, sizeof tableSize);
+	cout << tableSize << endl;
+	auto stop = chrono::high_resolution_clock::now();
+	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+	cout << duration.count() << endl;
+}
+
+//writes the huffman table to the file
+void writeTable(ofstream& fileOut, huffNode huffTable[], const int& tableSize) {
+	for (int i = 0; i < tableSize; i++) {
+		fileOut.write((char*)&huffTable[i].glyph, sizeof huffTable[i].glyph);
+		fileOut.write((char*)&huffTable[i].left, sizeof huffTable[i].left);
+		fileOut.write((char*)&huffTable[i].right, sizeof huffTable[i].right);
+	}
+}
+
+
+//tries to write out the bitsets to the file
+void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, string>& bitSets, const string &fileName) {/*
+	auto start = chrono::high_resolution_clock::now();*/
+	unsigned char c = ' ';
+	string bs = "";
+	fileIn.close();
+	fileIn.open(fileName, ios::in | ios::binary);
+	fileOut.close();
+	fileOut.open((fileName.substr(0, fileName.length() - 4)) + ".huf", ios::out | ios::binary | ios::app);
+	while (fileIn.read((char*)&c, sizeof c)) {
+		bs = bitSets[c];
+		fileOut.write((char*)&bs.front(), bs.length());
+	}/*
+	auto stop = chrono::high_resolution_clock::now();
+	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+	cout << duration.count() << endl;*/
+}
+//opens files, stupid
+void openFiles(ifstream &fileIn, ofstream &fileOut, const string &fileName, const int &fs) {
+	fileIn.open(fileName, ios::in | ios::binary);
+	if (!fileIn.is_open()) {
+		cout << "fileIn failed to open.\n";
+		fileIn.close();
+	}
+
+		string outFileName = fileName.substr(0, fileName.length() - 4);
+		outFileName = outFileName + ".huf";
+		fileOut.open(outFileName, ios::out | ios::binary);
+		if (!fileOut.is_open()) {
+			cout << "fileOut failed to open.\n";
+			fileOut.close();
+		}
+
 }
