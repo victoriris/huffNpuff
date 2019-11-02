@@ -114,13 +114,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Text Include="ExamPractice.txt" />
     <Text Include="huff.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="huff.huf" />
+    <ClCompile Include="Huff.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Huff.cpp" />
+    <None Include="ExamPractice.huf" />
+    <None Include="huff.huf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
