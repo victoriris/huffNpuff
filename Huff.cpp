@@ -24,8 +24,8 @@ void initFrequencyTable(map<unsigned char, int>&);
 void fillFrequencyTable(map<unsigned char, int>&, ifstream&);
 multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>&);
 void createTable(multimap<int, unsigned char>&, huffNode*);
-void createBitset(ofstream&, huffNode[], map<char, string>&);
-void writeMessage(ifstream&, ofstream&, map<char, string>&, const string&);
+void createBitset(ofstream&, huffNode[], map<char, unsigned char>&);
+void writeMessage(ifstream&, ofstream&, map<char, unsigned char>&, const string&);
 void writeHeader(ofstream&, string&, const multimap<int, unsigned char>&);
 void writeTable(ofstream&, huffNode[], const int&);
 
@@ -36,7 +36,7 @@ void main() {
 	map<unsigned char, int> frequencyTable;
 	huffNode huffTable[MAX_ENTRIES];
 	multimap<int, unsigned char> sortedTable;
-	map<char, string> bitSets;
+	map<char, unsigned char> bitSets;
 	cout << "Please enter a file name.\n";
 	cin >> fileName;
 	int fs;
@@ -203,12 +203,14 @@ multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>& glyphTab
 }
 
 //create a bitset for each char, in a map
-void createBitset(ofstream& fileOut, huffNode huffTable[], map<char, string> &bitSets) {
+void createBitset(ofstream& fileOut, huffNode huffTable[], map<char, unsigned char> &bitSets) {
 	//auto start = chrono::high_resolution_clock::now();
 	stack<huffNode> S;
-	int depth = 0;
+	int stringLength;
 	istringstream bit_stream;
+	int cnt;
 	huffNode root;
+	char *bitstring;
 	int blocker;
 	string bitString = "";
 	root.left = root.right = -2;
@@ -226,7 +228,6 @@ void createBitset(ofstream& fileOut, huffNode huffTable[], map<char, string> &bi
 			//move left
 			root = huffTable[blocker];
 			bitString += "0";
-			depth++;
 		}
 		else if (root.left < 0 && root.right > 0)
 		{
@@ -236,19 +237,32 @@ void createBitset(ofstream& fileOut, huffNode huffTable[], map<char, string> &bi
 			//move right
 			root = huffTable[blocker];
 			bitString += "1";
-			depth++;
 		}
 		//if left and right are both -1, you've found a glyph. add the bitArray to the bitSet map.
 		else if (!S.empty()) {
 			if (root.glyph != 255) {
-				bitSets[root.glyph] = bitString;
+				stringLength = bitString.length();
+				bitstring = NULL;
+				bitstring = new char[stringLength+1];
+				strcpy_s(bitstring, stringLength + 1, bitString.c_str());
+				unsigned char byte1 = '\0';
+
+				cnt = 0;
+				for (int b = 0; b < stringLength; b++) {
+					if (bitstring[b] == '1') {
+						byte1 = byte1 | (unsigned char)pow(2.0, cnt);
+					}
+					cnt++;
+				}
+
+				bitSets[root.glyph] = byte1;
 			}
 			bitString = bitString.substr(0, bitString.length() - 1);
-			depth--;
 			root = S.top();
 			S.pop();
 		}
 	} 
+
 
 	//for (auto i : bitSets) {
 	//	cout << i.first << " : ";
@@ -292,7 +306,7 @@ void writeTable(ofstream& fileOut, huffNode huffTable[], const int& tableSize) {
 
 
 //tries to write out the bitsets to the file
-void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, string>& bitSets, const string &fileName) {/*
+void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, unsigned char>& bitSets, const string &fileName) {/*
 	auto start = chrono::high_resolution_clock::now();*/
 	unsigned char c = ' ';
 	string bs = "";
@@ -301,9 +315,10 @@ void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, string>& bitSet
 	fileOut.close();
 	fileOut.open((fileName.substr(0, fileName.length() - 4)) + ".huf", ios::out | ios::binary | ios::app);
 	while (fileIn.read((char*)&c, sizeof c)) {
-		bs = bitSets[c];
-		fileOut.write((char*)&bs.front(), bs.length());
-	}/*
+		bs += bitSets[c];
+	}
+	fileOut.write((char*)&bs.front(), bs.length());
+	/*
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 	cout << duration.count() << endl;*/
