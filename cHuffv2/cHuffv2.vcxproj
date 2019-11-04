@@ -126,6 +126,7 @@
     <None Include="huff.huf" />
     <None Include="ttax.exe" />
     <None Include="ttax.huf" />
+    <None Include="ttax2.huf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

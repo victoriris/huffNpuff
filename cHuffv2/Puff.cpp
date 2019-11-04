@@ -39,7 +39,7 @@
 //	// Count length of file name
 //    for (auto i = 0; i < 4; i++) {
 //        huffFile.compressedFile.read((char *)&c, 1);
-//      //  huffFile.compressedFile.seekg(0, 1);
+//        huffFile.compressedFile.seekg(0, 1);
 //        for (int j = 0; j < 8; j++) {
 //            nameLength += isBitOn(c, j) ? (short) pow(2, bitCount) : 0;
 //            bitCount++;
@@ -49,7 +49,7 @@
 //	// Get the name of file
 //    for (int i = 0; i < nameLength; i++) {
 //        huffFile.compressedFile.read((char *)&c, 1);
-//       // huffFile.compressedFile.seekg(0, 1);
+//        huffFile.compressedFile.seekg(0, 1);
 //        huffFile.name += c;
 //    }
 //}
@@ -100,14 +100,12 @@
 //
 //// Generate byte codes
 //void getByteCodes(HuffTableItem huffTable[], map<string, int> &byteCodes, int position, string byteCode = "") {
-//
+//    
 //	// If is a leaf, attach the bytecode to glyph
-//	if (huffTable[position].left == -1) {
-//		if (huffTable[position].right == -1) {
+//	if (huffTable[position].left == -1 && huffTable[position].right == -1) {
 //		byteCodes[byteCode] = huffTable[position].glyph;
 //		return;
 //	}
-//}
 //
 //	// Otherwise.. is a merge
 //

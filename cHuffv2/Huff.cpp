@@ -14,7 +14,7 @@ const int MAX_ENTRIES = 513;
 //makes a node to hold frequency, glyph, and l/r pointers for the huffman table or tree
 struct huffNode {
 	int frequency;
-	unsigned char glyph;
+	int glyph = -1;
 	int left = -1;
 	int right = -1;
 };
@@ -43,7 +43,7 @@ void main() {
 	int fs;
 	openFiles(fileIn, fileOut, fileName, fs);
 	auto start = chrono::high_resolution_clock::now();
-	int fileSize = 0;
+	int fileSize = 1;
 	initFrequencyTable(frequencyTable);
 	fillFrequencyTable(frequencyTable, fileIn, fileSize);
 	sortedTable = deleteEmptyGlyphs(frequencyTable);
@@ -270,7 +270,7 @@ void writeHeader(ofstream& fileOut, string& fileName, const multimap<int, unsign
 	auto start = chrono::high_resolution_clock::now();
 	int fileNameSize = fileName.length();
 
-	int tableSize = glyphTable.size();
+	int tableSize = (glyphTable.size() * 2)+1;
 	fileOut.write((char*)&fileNameSize, 4);
 	cout << fileNameSize;
 	fileOut.write((char*)&fileName.front(), fileName.length());
@@ -297,7 +297,6 @@ void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, string>& bitSet
 	auto start = chrono::high_resolution_clock::now();*/
 
 	unsigned char c = ' ';
-	vector<unsigned char> bs;
 	unsigned char bits;
 	int cnt = 0;
 	fileIn.close();
@@ -327,11 +326,12 @@ void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, string>& bitSet
 			}
 		}
 
-		bs.push_back(bits);
 	}
-	if (cnt > 1 && cnt < 8) {
+
+	if (cnt < 8 && cnt > 1) {
 		fileOut.write((char*)&bits, sizeof bits);
 	}
+
 	/*
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
