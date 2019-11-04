@@ -26,12 +26,21 @@
     <ClCompile Include="Huff.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Puff.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="huff.huf">
       <Filter>Source Files</Filter>
     </None>
     <None Include="ExamPractice.huf">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="ttax.exe">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="ttax.huf">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>

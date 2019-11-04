@@ -6,6 +6,7 @@
 #include <map>
 #include <stack>
 #include <bitset>
+#include <vector>
 #include <sstream>
 using namespace std;
 const int CHARNUM = 256;
@@ -21,11 +22,11 @@ struct huffNode {
 
 void openFiles(ifstream&, ofstream&, const string&, const int&);
 void initFrequencyTable(map<unsigned char, int>&);
-void fillFrequencyTable(map<unsigned char, int>&, ifstream&);
+void fillFrequencyTable(map<unsigned char, int>&, ifstream&, int&);
 multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>&);
 void createTable(multimap<int, unsigned char>&, huffNode*);
-void createBitset(ofstream&, huffNode[], map<char, unsigned char>&);
-void writeMessage(ifstream&, ofstream&, map<char, unsigned char>&, const string&);
+void createBitset(ofstream&, huffNode[], map<char, string>&);
+void writeMessage(ifstream&, ofstream&, map<char, string>&, const string&, const int &);
 void writeHeader(ofstream&, string&, const multimap<int, unsigned char>&);
 void writeTable(ofstream&, huffNode[], const int&);
 
@@ -36,28 +37,29 @@ void main() {
 	map<unsigned char, int> frequencyTable;
 	huffNode huffTable[MAX_ENTRIES];
 	multimap<int, unsigned char> sortedTable;
-	map<char, unsigned char> bitSets;
+	map<char, string> bitSets;
 	cout << "Please enter a file name.\n";
 	cin >> fileName;
 	int fs;
 	openFiles(fileIn, fileOut, fileName, fs);
 	auto start = chrono::high_resolution_clock::now();
-
+	int fileSize = 0;
 	initFrequencyTable(frequencyTable);
-	fillFrequencyTable(frequencyTable, fileIn);
+	fillFrequencyTable(frequencyTable, fileIn, fileSize);
 	sortedTable = deleteEmptyGlyphs(frequencyTable);
 	createTable(sortedTable, huffTable);
 	createBitset(fileOut, huffTable, bitSets);
 	writeHeader(fileOut, fileName, sortedTable);
 	int tableSize = (sortedTable.size() * 2) + 1;
 	writeTable(fileOut, huffTable, tableSize);
-	writeMessage(fileIn, fileOut, bitSets, fileName);
+	writeMessage(fileIn, fileOut, bitSets, fileName, fileSize);
 
 	fileIn.close();
 	fileOut.close();
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 	cout << duration.count() << endl;
+	system("pause");
 }
 
 /*
@@ -156,12 +158,13 @@ void createTable(multimap<int, unsigned char> &glyphTable, huffNode* huffTable) 
 
 
 //populates map with glyphs and frequencies
-void fillFrequencyTable(map<unsigned char, int>& frequencyTable, ifstream &fileIn) {/*
+void fillFrequencyTable(map<unsigned char, int>& frequencyTable, ifstream &fileIn, int& fileSize) {/*
 	auto start = chrono::high_resolution_clock::now();*/
 	unsigned char glyph;
 
 	while (fileIn.read((char*)&glyph, 1)) {
 		frequencyTable[glyph]++;
+		fileSize++;
 	}/*
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
@@ -203,14 +206,12 @@ multimap<int, unsigned char> deleteEmptyGlyphs(map<unsigned char, int>& glyphTab
 }
 
 //create a bitset for each char, in a map
-void createBitset(ofstream& fileOut, huffNode huffTable[], map<char, unsigned char> &bitSets) {
+void createBitset(ofstream& fileOut, huffNode huffTable[], map<char, string> &bitSets) {
 	//auto start = chrono::high_resolution_clock::now();
 	stack<huffNode> S;
 	int stringLength;
-	istringstream bit_stream;
 	int cnt;
 	huffNode root;
-	char *bitstring;
 	int blocker;
 	string bitString = "";
 	root.left = root.right = -2;
@@ -241,21 +242,7 @@ void createBitset(ofstream& fileOut, huffNode huffTable[], map<char, unsigned ch
 		//if left and right are both -1, you've found a glyph. add the bitArray to the bitSet map.
 		else if (!S.empty()) {
 			if (root.glyph != 255) {
-				stringLength = bitString.length();
-				bitstring = NULL;
-				bitstring = new char[stringLength+1];
-				strcpy_s(bitstring, stringLength + 1, bitString.c_str());
-				unsigned char byte1 = '\0';
-
-				cnt = 0;
-				for (int b = 0; b < stringLength; b++) {
-					if (bitstring[b] == '1') {
-						byte1 = byte1 | (unsigned char)pow(2.0, cnt);
-					}
-					cnt++;
-				}
-
-				bitSets[root.glyph] = byte1;
+				bitSets[root.glyph] = bitString;
 			}
 			bitString = bitString.substr(0, bitString.length() - 1);
 			root = S.top();
@@ -263,12 +250,12 @@ void createBitset(ofstream& fileOut, huffNode huffTable[], map<char, unsigned ch
 		}
 	} 
 
-
-	//for (auto i : bitSets) {
-	//	cout << i.first << " : ";
-	//	cout << i.second;
-	//	cout << endl;
-	//}
+	cout << endl << endl;
+	for (auto i : bitSets) {
+		cout << i.first << " : ";
+		cout << i.second;
+		cout << endl;
+	}
 
 /*
 
@@ -306,18 +293,45 @@ void writeTable(ofstream& fileOut, huffNode huffTable[], const int& tableSize) {
 
 
 //tries to write out the bitsets to the file
-void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, unsigned char>& bitSets, const string &fileName) {/*
+void writeMessage(ifstream& fileIn, ofstream& fileOut, map<char, string>& bitSets, const string &fileName, const int &fileSize) {/*
 	auto start = chrono::high_resolution_clock::now();*/
+
 	unsigned char c = ' ';
-	string bs = "";
+	vector<unsigned char> bs;
+	unsigned char bits;
+	int cnt = 0;
 	fileIn.close();
 	fileIn.open(fileName, ios::in | ios::binary);
 	fileOut.close();
 	fileOut.open((fileName.substr(0, fileName.length() - 4)) + ".huf", ios::out | ios::binary | ios::app);
-	while (fileIn.read((char*)&c, sizeof c)) {
-		bs += bitSets[c];
+	
+	bits = '\0';
+	for (int i = 0; i < fileSize; i++) {
+		fileIn.read((char*)&c, sizeof c);
+
+		for (int b = 0; b < bitSets[c].length(); b++) {
+			if (cnt < 8) {
+				if (bitSets[c][b] == '1') {
+					bits = bits | (unsigned char)pow(2.0, cnt);
+				}
+				cnt++;
+			}
+			else {
+				cnt = 0;
+				fileOut.write((char*)&bits, sizeof bits);
+				bits = '\0';
+				if (bitSets[c][b] == '1') {
+					bits = bits | (unsigned char)pow(2.0, cnt);
+				}
+				cnt++;
+			}
+		}
+
+		bs.push_back(bits);
 	}
-	fileOut.write((char*)&bs.front(), bs.length());
+	if (cnt > 1 && cnt < 8) {
+		fileOut.write((char*)&bits, sizeof bits);
+	}
 	/*
 	auto stop = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);

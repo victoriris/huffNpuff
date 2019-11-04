@@ -119,10 +119,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Huff.cpp" />
+    <ClCompile Include="Puff.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ExamPractice.huf" />
     <None Include="huff.huf" />
+    <None Include="ttax.exe" />
+    <None Include="ttax.huf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
