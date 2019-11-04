@@ -124,6 +124,7 @@
   <ItemGroup>
     <None Include="ExamPractice.huf" />
     <None Include="huff.huf" />
+    <None Include="links.huf" />
     <None Include="ttax.exe" />
     <None Include="ttax.huf" />
     <None Include="ttax2.huf" />
